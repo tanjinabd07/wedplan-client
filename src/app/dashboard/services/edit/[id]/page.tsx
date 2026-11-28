@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import { apiFetch } from "@/lib/api";
 
 interface Service {
   _id: string;
@@ -30,13 +32,13 @@ export default function EditServicePage() {
 
   // Load existing service information
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchService = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           "http://localhost:5000/api/services/my-services",
-          {
-            credentials: "include",
-          },
+          { signal: controller.signal },
         );
 
         const data = await response.json();
@@ -45,7 +47,7 @@ export default function EditServicePage() {
           throw new Error(data.message || "Unable to load services");
         }
 
-        const service: Service = data.services.find(
+        const service: Service | undefined = data.services.find(
           (item: Service) => item._id === params.id,
         );
 
@@ -60,14 +62,20 @@ export default function EditServicePage() {
         setLocation(service.location);
         setImage(service.image || "");
       } catch (err) {
+        if (controller.signal.aborted) return;
+
         console.error("Fetch Service Error:", err);
         setError(err instanceof Error ? err.message : "Something went wrong");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchService();
+
+    return () => controller.abort();
   }, [params.id]);
 
   // Update service
@@ -78,14 +86,13 @@ export default function EditServicePage() {
     setError("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `http://localhost:5000/api/services/my-services/${params.id}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
           body: JSON.stringify({
             title,
             category,
@@ -220,9 +227,12 @@ export default function EditServicePage() {
             />
 
             {image && (
-              <img
+              <Image
                 src={image}
                 alt="Service preview"
+                width={600}
+                height={300}
+                unoptimized
                 className="mt-3 h-48 w-full rounded-lg object-cover"
               />
             )}

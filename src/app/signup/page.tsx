@@ -94,7 +94,7 @@ export default function SignUpPage() {
 
           <div className="mt-10 rounded-2xl border border-white/20 bg-white/10 p-6">
             <p className="text-xl font-medium italic">
-              "Your love story deserves a perfect celebration."
+              &quot;Your love story deserves a perfect celebration.&quot;
             </p>
           </div>
         </div>

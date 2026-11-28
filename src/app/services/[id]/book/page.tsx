@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 
 interface Service {
   _id: string;
@@ -32,15 +33,24 @@ export default function BookingPage() {
     if (isPending) return;
 
     if (!session?.user) {
-      router.push("/signin");
+      router.replace("/signin");
+      return;
     }
-  }, [isPending, session, router]);
 
-  useEffect(() => {
+    if (session.user.role !== "customer") {
+      router.replace("/dashboard");
+      return;
+    }
+
+    const controller = new AbortController();
+
     const fetchService = async () => {
       try {
-        const response = await fetch(
+        setLoading(true);
+
+        const response = await apiFetch(
           `http://localhost:5000/api/services/${params.id}`,
+          { signal: controller.signal },
         );
 
         if (!response.ok) {
@@ -50,15 +60,21 @@ export default function BookingPage() {
         const data = await response.json();
         setService(data.service);
       } catch (err) {
+        if (controller.signal.aborted) return;
+
         console.error("Booking Service Error:", err);
         setError("Unable to load service details.");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchService();
-  }, [params.id]);
+
+    return () => controller.abort();
+  }, [params.id, session, isPending, router]);
 
   const handleBooking = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,6 +87,11 @@ export default function BookingPage() {
       return;
     }
 
+    if (session.user.role !== "customer") {
+      setError("Only customers can submit booking requests.");
+      return;
+    }
+
     if (!eventDate || !eventLocation.trim() || !guestCount) {
       setError("Please fill in all required fields.");
       return;
@@ -79,14 +100,13 @@ export default function BookingPage() {
     try {
       setSubmitting(true);
 
-      const response = await fetch(
+      const response = await apiFetch(
         "http://localhost:5000/api/bookings/create",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
           body: JSON.stringify({
             serviceId: params.id,
             eventDate,
@@ -133,10 +153,10 @@ export default function BookingPage() {
     );
   }
 
-  if (!session?.user) {
+  if (!session?.user || session.user.role !== "customer") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fff8f6]">
-        <p className="text-[#7c3547]">Redirecting to sign in...</p>
+        <p className="text-[#7c3547]">Redirecting...</p>
       </div>
     );
   }

@@ -1,8 +1,10 @@
 "use client";
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 
 interface Service {
   _id: string;
@@ -65,9 +67,8 @@ export default function AdminPage() {
 
     const loadServices = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           "http://localhost:5000/api/services/pending",
-          { credentials: "include" },
         );
 
         const data = await response.json();
@@ -101,9 +102,8 @@ export default function AdminPage() {
 
         params.set("role", roleFilter);
 
-        const response = await fetch(
+        const response = await apiFetch(
           `http://localhost:5000/api/admin/users?${params.toString()}`,
-          { credentials: "include" },
         );
 
         const data = await response.json();
@@ -137,9 +137,8 @@ export default function AdminPage() {
 
         params.set("status", transactionStatus);
 
-        const response = await fetch(
+        const response = await apiFetch(
           `http://localhost:5000/api/admin/transactions?${params.toString()}`,
-          { credentials: "include" },
         );
 
         const data = await response.json();
@@ -170,11 +169,10 @@ export default function AdminPage() {
       setMessage("");
       setError("");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `http://localhost:5000/api/services/${serviceId}/status`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -205,11 +203,10 @@ export default function AdminPage() {
       setError("");
       setProcessingEmail(email);
 
-      const response = await fetch(
+      const response = await apiFetch(
         `http://localhost:5000/api/admin/users/${encodeURIComponent(email)}/block`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -571,15 +568,10 @@ export default function AdminPage() {
                 <thead>
                   <tr className="border-b bg-[#fff8f6] text-sm text-gray-600">
                     <th className="px-4 py-4 font-semibold">Vendor</th>
-
                     <th className="px-4 py-4 font-semibold">Plan</th>
-
                     <th className="px-4 py-4 font-semibold">Amount</th>
-
                     <th className="px-4 py-4 font-semibold">Payment Status</th>
-
                     <th className="px-4 py-4 font-semibold">Date</th>
-
                     <th className="px-4 py-4 font-semibold">Transaction ID</th>
                   </tr>
                 </thead>
@@ -594,7 +586,6 @@ export default function AdminPage() {
                         <p className="font-semibold text-gray-800">
                           {transaction.vendorName}
                         </p>
-
                         <p className="mt-1 text-xs text-gray-500">
                           {transaction.vendorEmail}
                         </p>

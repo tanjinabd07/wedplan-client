@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -17,7 +18,7 @@ export default function Navbar() {
     await authClient.signOut();
     setProfileOpen(false);
     setMobileOpen(false);
-    router.push("/login");
+    router.push("/signin");
     router.refresh();
   };
 
@@ -29,6 +30,22 @@ export default function Navbar() {
       : user?.role === "admin"
         ? "/dashboard/admin"
         : "/dashboard";
+
+  // ছবি থাকলে ছবি, না থাকলে নামের প্রথম অক্ষর
+  const avatar = user?.image ? (
+    <Image
+      src={user.image}
+      alt="Profile"
+      width={32}
+      height={32}
+      unoptimized
+      className="h-8 w-8 shrink-0 rounded-full object-cover"
+    />
+  ) : (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7c3547] text-white">
+      {user?.name?.charAt(0).toUpperCase() || "U"}
+    </span>
+  );
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[#f1dfe3] bg-white shadow-sm">
@@ -65,9 +82,7 @@ export default function Navbar() {
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 rounded-full border border-[#ead5da] px-4 py-2 text-[#7c3547] hover:bg-[#fff8f6]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7c3547] text-white">
-                  {user.name?.charAt(0).toUpperCase() || "U"}
-                </span>
+                {avatar}
 
                 <span className="max-w-32 truncate font-medium">
                   {user.name || "My Account"}
@@ -163,7 +178,10 @@ export default function Navbar() {
             {!isPending &&
               (user ? (
                 <>
-                  <p className="font-medium text-[#7c3547]">{user.name}</p>
+                  <div className="flex items-center gap-2">
+                    {avatar}
+                    <p className="font-medium text-[#7c3547]">{user.name}</p>
+                  </div>
 
                   <Link
                     href={dashboardLink}

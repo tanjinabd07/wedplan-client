@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Service {
   _id: string;
@@ -80,9 +81,12 @@ export default function FeaturedServices() {
               >
                 <div className="h-56 overflow-hidden bg-[#f9edf0]">
                   {service.image ? (
-                    <img
+                    <Image
                       src={service.image}
                       alt={service.title}
+                      width={400}
+                      height={224}
+                      unoptimized
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                     />
                   ) : (

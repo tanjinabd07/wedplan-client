@@ -13,8 +13,8 @@ export default function HomePage() {
       <CategorySection />
       <FeaturedServices />
       <HowItWorks />
-        <CTASection />
-        <Footer />
+      <CTASection />
+      <Footer />
     </div>
   );
 }

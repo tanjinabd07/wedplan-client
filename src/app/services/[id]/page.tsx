@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 
 interface Service {
   _id: string;
@@ -17,39 +20,73 @@ export default function ServiceDetailsPage() {
   const params = useParams();
   const router = useRouter();
 
+  const { data: session, isPending } = authClient.useSession();
+
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (isPending) return;
+
+    if (!session?.user) {
+      router.replace("/signin");
+      return;
+    }
+
+    const controller = new AbortController();
+
     const fetchService = async () => {
       try {
-        const response = await fetch(
+        setLoading(true);
+        setError("");
+
+        const response = await apiFetch(
           `http://localhost:5000/api/services/${params.id}`,
+          { signal: controller.signal },
         );
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error("Service not found");
+          console.error("API Error:", response.status, data);
+
+          throw new Error(data.message || `Request failed: ${response.status}`);
         }
 
-        const data = await response.json();
         setService(data.service);
       } catch (err) {
+        if (controller.signal.aborted) return;
+
         console.error("Service Details Error:", err);
         setError("Unable to load service details.");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchService();
-  }, [params.id]);
 
-  if (loading) {
+    return () => controller.abort();
+  }, [params.id, session, isPending, router]);
+
+  if (isPending || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fff8f6]">
         <p className="text-lg font-medium text-[#7c3547]">
           Loading service details...
+        </p>
+      </div>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#fff8f6]">
+        <p className="text-lg font-medium text-[#7c3547]">
+          Redirecting to Sign In...
         </p>
       </div>
     );
@@ -81,7 +118,6 @@ export default function ServiceDetailsPage() {
   return (
     <main className="min-h-screen bg-[#fff8f6] px-4 py-10 sm:py-14">
       <div className="mx-auto max-w-6xl">
-        {/* Back Button */}
         <button
           onClick={() => router.push("/services")}
           className="mb-8 inline-flex items-center gap-2 font-semibold text-[#813d54] transition hover:gap-3"
@@ -89,13 +125,15 @@ export default function ServiceDetailsPage() {
           <span>←</span> Back to Services
         </button>
 
-        {/* Service Image */}
         <div className="relative h-72 overflow-hidden rounded-3xl bg-[#f4e5e8] shadow-sm sm:h-[450px]">
           {service.image ? (
-            <img
+            <Image
               src={service.image}
               alt={service.title}
-              className="h-full w-full object-cover"
+              fill
+              unoptimized
+              sizes="(max-width: 640px) 100vw, 1200px"
+              className="object-cover"
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center">
@@ -113,9 +151,7 @@ export default function ServiceDetailsPage() {
           </div>
         </div>
 
-        {/* Service Content */}
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
-          {/* Description Section */}
           <section className="rounded-3xl border border-[#f1dfe3] bg-white p-6 shadow-sm sm:p-9">
             <p className="text-sm font-semibold tracking-[3px] text-[#a16b7e]">
               MAKE YOUR DAY SPECIAL
@@ -147,13 +183,11 @@ export default function ServiceDetailsPage() {
             </div>
           </section>
 
-          {/* Service Information */}
           <aside className="h-fit rounded-3xl border border-[#f1dfe3] bg-white p-6 shadow-sm sm:p-7">
             <h2 className="text-xl font-bold text-[#7c3547]">
               Service Information
             </h2>
 
-            {/* Price */}
             <div className="mt-6 rounded-2xl bg-[#fff0f2] p-5">
               <p className="text-sm font-medium text-gray-600">Service Price</p>
 
@@ -162,7 +196,6 @@ export default function ServiceDetailsPage() {
               </p>
             </div>
 
-            {/* Category */}
             <div className="mt-6 border-b border-gray-100 pb-5">
               <p className="text-sm text-gray-500">Category</p>
               <p className="mt-2 font-semibold text-gray-800">
@@ -170,7 +203,6 @@ export default function ServiceDetailsPage() {
               </p>
             </div>
 
-            {/* Location */}
             <div className="mt-5">
               <p className="text-sm text-gray-500">Service Location</p>
 
@@ -179,15 +211,15 @@ export default function ServiceDetailsPage() {
               </p>
             </div>
 
-            {/* Book Now Button */}
-            <button
-              onClick={() => router.push(`/services/${service._id}/book`)}
-              className="mt-8 w-full rounded-full bg-[#813d54] px-5 py-3 font-semibold text-white transition hover:bg-[#682c41]"
-            >
-              Book Now
-            </button>
+            {session.user.role === "customer" && (
+              <button
+                onClick={() => router.push(`/services/${service._id}/book`)}
+                className="mt-8 w-full rounded-full bg-[#813d54] px-5 py-3 font-semibold text-white transition hover:bg-[#682c41]"
+              >
+                Book Now
+              </button>
+            )}
 
-            {/* Explore More Services */}
             <button
               onClick={() => router.push("/services")}
               className="mt-3 w-full rounded-full border border-[#813d54] px-5 py-3 font-semibold text-[#813d54] transition hover:bg-[#813d54] hover:text-white"

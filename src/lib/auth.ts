@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware, APIError } from "better-auth/api";
+import { jwt } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
@@ -50,6 +51,22 @@ export const auth = betterAuth({
       },
     },
   },
+
+  plugins: [
+    jwt({
+      jwks: {
+        keyPairConfig: {
+          alg: "ES256",
+        },
+      },
+      jwt: {
+        definePayload: ({ user }) => ({
+          id: user.id,
+          email: user.email,
+        }),
+      },
+    }),
+  ],
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {

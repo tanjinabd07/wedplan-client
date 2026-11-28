@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiFetch } from "@/lib/api";
+import Image from "next/image";
 
 interface Service {
   _id: string;
@@ -35,14 +37,20 @@ export default function MyServicesPage() {
   }, [toast]);
 
   // Show toast after editing
+  // Show toast after editing
   useEffect(() => {
     const message = sessionStorage.getItem("wedplan-toast");
 
-    if (message) {
+    if (!message) return;
+
+    const timer = setTimeout(() => {
       setToastType("success");
       setToast(message);
-      sessionStorage.removeItem("wedplan-toast");
-    }
+    }, 0);
+
+    sessionStorage.removeItem("wedplan-toast");
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Fetch Vendor's Services
@@ -51,9 +59,8 @@ export default function MyServicesPage() {
       setLoading(true);
       setError("");
 
-      const response = await fetch(
+      const response = await apiFetch(
         "http://localhost:5000/api/services/my-services",
-        { credentials: "include" },
       );
 
       const data = await response.json();
@@ -71,7 +78,39 @@ export default function MyServicesPage() {
   };
 
   useEffect(() => {
-    fetchMyServices();
+    const controller = new AbortController();
+
+    const loadServices = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await apiFetch(
+          "http://localhost:5000/api/services/my-services",
+          { signal: controller.signal },
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch services");
+        }
+
+        setServices(data.services || []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadServices();
+
+    return () => controller.abort();
   }, []);
 
   // Delete Service
@@ -79,11 +118,10 @@ export default function MyServicesPage() {
     try {
       setDeletingId(id);
 
-      const response = await fetch(
+      const response = await apiFetch(
         `http://localhost:5000/api/services/my-services/${id}`,
         {
           method: "DELETE",
-          credentials: "include",
         },
       );
 
@@ -230,9 +268,12 @@ export default function MyServicesPage() {
                       className="overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-md"
                     >
                       {service.image ? (
-                        <img
+                        <Image
                           src={service.image}
                           alt={service.title}
+                          width={600}
+                          height={300}
+                          unoptimized
                           className="h-48 w-full object-cover"
                         />
                       ) : (

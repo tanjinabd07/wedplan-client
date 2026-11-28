@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 
 interface Service {
   _id: string;
@@ -63,15 +64,17 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!session || role !== "vendor") return;
 
+    let isMounted = true;
+
     const fetchMyServices = async () => {
       try {
         setServicesLoading(true);
         setServicesError("");
 
-        const response = await fetch(
+        const response = await apiFetch(
           "http://localhost:5000/api/services/my-services",
           {
-            credentials: "include",
+            method: "GET",
           },
         );
 
@@ -81,32 +84,44 @@ export default function DashboardPage() {
           throw new Error(data.message || "Failed to load services.");
         }
 
-        setServices(data.services || []);
+        if (isMounted) {
+          setServices(data.services || []);
+        }
       } catch (err) {
-        setServicesError(
-          err instanceof Error ? err.message : "Something went wrong.",
-        );
+        if (isMounted) {
+          setServicesError(
+            err instanceof Error ? err.message : "Something went wrong.",
+          );
+        }
       } finally {
-        setServicesLoading(false);
+        if (isMounted) {
+          setServicesLoading(false);
+        }
       }
     };
 
     fetchMyServices();
+
+    return () => {
+      isMounted = false;
+    };
   }, [session, role]);
 
   // Customer: Fetch My Bookings
   useEffect(() => {
     if (!session || role !== "customer") return;
 
+    let isMounted = true;
+
     const fetchMyBookings = async () => {
       try {
         setBookingsLoading(true);
         setBookingsError("");
 
-        const response = await fetch(
+        const response = await apiFetch(
           "http://localhost:5000/api/bookings/my-bookings",
           {
-            credentials: "include",
+            method: "GET",
           },
         );
 
@@ -116,32 +131,44 @@ export default function DashboardPage() {
           throw new Error(data.message || "Failed to load bookings.");
         }
 
-        setBookings(data.bookings || []);
+        if (isMounted) {
+          setBookings(data.bookings || []);
+        }
       } catch (err) {
-        setBookingsError(
-          err instanceof Error ? err.message : "Something went wrong.",
-        );
+        if (isMounted) {
+          setBookingsError(
+            err instanceof Error ? err.message : "Something went wrong.",
+          );
+        }
       } finally {
-        setBookingsLoading(false);
+        if (isMounted) {
+          setBookingsLoading(false);
+        }
       }
     };
 
     fetchMyBookings();
+
+    return () => {
+      isMounted = false;
+    };
   }, [session, role]);
 
   // Vendor: Fetch Booking Statistics
   useEffect(() => {
     if (!session || role !== "vendor") return;
 
+    let isMounted = true;
+
     const fetchVendorBookings = async () => {
       try {
         setVendorBookingsLoading(true);
         setVendorBookingsError("");
 
-        const response = await fetch(
+        const response = await apiFetch(
           "http://localhost:5000/api/bookings/vendor-bookings",
           {
-            credentials: "include",
+            method: "GET",
           },
         );
 
@@ -151,17 +178,27 @@ export default function DashboardPage() {
           throw new Error(data.message || "Failed to load bookings.");
         }
 
-        setVendorBookings(data.bookings || []);
+        if (isMounted) {
+          setVendorBookings(data.bookings || []);
+        }
       } catch (err) {
-        setVendorBookingsError(
-          err instanceof Error ? err.message : "Something went wrong.",
-        );
+        if (isMounted) {
+          setVendorBookingsError(
+            err instanceof Error ? err.message : "Something went wrong.",
+          );
+        }
       } finally {
-        setVendorBookingsLoading(false);
+        if (isMounted) {
+          setVendorBookingsLoading(false);
+        }
       }
     };
 
     fetchVendorBookings();
+
+    return () => {
+      isMounted = false;
+    };
   }, [session, role]);
 
   // Loading

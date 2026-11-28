@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
+import Image from "next/image";
 
 interface Booking {
   _id: string;
@@ -38,14 +40,15 @@ export default function MyBookingsPage() {
 
     const fetchBookings = async () => {
       try {
+        setLoading(true);
+
         const endpoint =
           role === "vendor"
             ? "http://localhost:5000/api/bookings/vendor-bookings"
             : "http://localhost:5000/api/bookings/my-bookings";
 
-        const response = await fetch(endpoint, {
+        const response = await apiFetch(endpoint, {
           method: "GET",
-          credentials: "include",
         });
 
         const data = await response.json();
@@ -95,12 +98,11 @@ export default function MyBookingsPage() {
         ? `http://localhost:5000/api/bookings/${bookingId}/cancel`
         : `http://localhost:5000/api/bookings/${bookingId}/status`;
 
-      const response = await fetch(endpoint, {
+      const response = await apiFetch(endpoint, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify(isCancel ? {} : { status: action }),
       });
 
@@ -164,7 +166,7 @@ export default function MyBookingsPage() {
     );
   }
 
-  if (loading) {
+  if (loading && (role === "customer" || role === "vendor")) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading bookings...</p>
@@ -222,10 +224,13 @@ export default function MyBookingsPage() {
               className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
             >
               {booking.serviceImage && (
-                <img
+                <Image
                   src={booking.serviceImage}
                   alt={booking.serviceTitle}
-                  className="w-full h-52 object-cover"
+                  width={300}
+                  height={400}
+                  className="h-[400px] w-full object-cover"
+                  unoptimized
                 />
               )}
 

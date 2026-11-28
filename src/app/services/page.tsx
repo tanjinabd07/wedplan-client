@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-
+import Image from "next/image";
 interface Service {
   _id: string;
   title: string;
@@ -220,12 +220,15 @@ export default function ServicesPage() {
                     className="group block overflow-hidden rounded-2xl border border-[#f1dfe3] bg-white shadow-sm transition duration-300 hover:-translate-y-2 hover:shadow-xl"
                   >
                     {/* Service Image */}
-                    <div className="h-56 w-full overflow-hidden bg-[#f4e5e8]">
+                    <div className="relative h-56 w-full overflow-hidden bg-[#f4e5e8]">
                       {service.image ? (
-                        <img
+                        <Image
                           src={service.image}
                           alt={service.title}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                          fill
+                          unoptimized
+                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          className="object-cover transition duration-500 group-hover:scale-110"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-6xl">

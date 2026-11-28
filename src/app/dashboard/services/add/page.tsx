@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 
 export default function AddServicePage() {
-  const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
 
   const [title, setTitle] = useState("");
@@ -131,7 +129,7 @@ export default function AddServicePage() {
         <h1 className="text-2xl font-bold text-[#7c3547]">Please Sign In</h1>
 
         <Link
-          href="/login"
+          href="/signin"
           className="mt-5 rounded-xl bg-[#7c3547] px-6 py-3 text-white"
         >
           Sign In
